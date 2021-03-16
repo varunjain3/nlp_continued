@@ -24,7 +24,7 @@ class Encoder(nn.Module):
 
         # embedded = [src len, batch size, emb dim]
 
-        outputs, hidden = self.rnn(embedded)
+        outputs, (hidden, cell) = self.rnn(embedded)
 
         # outputs = [src len, batch size, hid dim * num directions]
         # hidden = [n layers * num directions, batch size, hid dim]
@@ -90,7 +90,7 @@ class Decoder(nn.Module):
 
         self.embedding = nn.Embedding(output_dim, emb_dim)
 
-        self.rnn = nn.GRU((enc_hid_dim * 2) + emb_dim, dec_hid_dim)
+        self.rnn = nn.LSTM((enc_hid_dim * 2) + emb_dim, dec_hid_dim)
 
         self.fc_out = nn.Linear(
             (enc_hid_dim * 2) + dec_hid_dim + emb_dim, output_dim)
@@ -135,7 +135,7 @@ class Decoder(nn.Module):
 
         # rnn_input = [1, batch size, (enc hid dim * 2) + emb dim]
 
-        output, hidden = self.rnn(rnn_input, hidden.unsqueeze(0))
+        output, (hidden, cell) = self.rnn(rnn_input, hidden.unsqueeze(0))
 
         # output = [seq len, batch size, dec hid dim * n directions]
         # hidden = [n layers * n directions, batch size, dec hid dim]
