@@ -28,7 +28,7 @@ torch.backends.cudnn.deterministic = True
 def tokenize(x): return x.split()
 
 
-MAX_LEN = 700
+MAX_LEN = 200
 BOS_WORD = '<sos>'
 EOS_WORD = '<eos>'
 BLANK_WORD = "<blank>"
@@ -53,14 +53,14 @@ print(f"Unique tokens in source vocabulary: {len(SRC.vocab)}")
 print(f"Unique tokens in target vocabulary: {len(TRG.vocab)}")
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print("Cuda Devoce: ", device)
+print("Cuda Device: ", device)
 
-BATCH_SIZE = 128
+BATCH_SIZE = 64
 
 train_iterator, valid_iterator, test_iterator = BucketIterator.splits(
     (train_data, valid_data, test_data),
     batch_size=BATCH_SIZE,
-    device=device)
+    device=device, sort=False)
 
 
 INPUT_DIM = len(SRC.vocab)
@@ -141,6 +141,8 @@ def train(model, iterator, optimizer, criterion, clip):
 
         epoch_loss += loss.item()
 
+        print(f'{i}: \tTrain Loss: {loss.item():.3f} | Train PPL: {math.exp(loss.item()):7.3f}')
+
     return epoch_loss / len(iterator)
 
 
@@ -190,23 +192,28 @@ CLIP = 1
 
 best_valid_loss = float('inf')
 
-for epoch in range(N_EPOCHS):
+# for epoch in range(N_EPOCHS):
 
-    start_time = time.time()
+#     start_time = time.time()
 
-    train_loss = train(model, train_iterator, optimizer, criterion, CLIP)
-    valid_loss = evaluate(model, valid_iterator, criterion)
+#     train_loss = train(model, train_iterator, optimizer, criterion, CLIP)
+#     valid_loss = evaluate(model, valid_iterator, criterion)
 
-    end_time = time.time()
+#     end_time = time.time()
 
-    epoch_mins, epoch_secs = epoch_time(start_time, end_time)
+#     epoch_mins, epoch_secs = epoch_time(start_time, end_time)
 
-    if valid_loss < best_valid_loss:
-        best_valid_loss = valid_loss
-        torch.save(model.state_dict(), 'bestmodel.pt')
+#     if valid_loss < best_valid_loss:
+#         best_valid_loss = valid_loss
+#         torch.save(model.state_dict(), 'bestmodel.pt')
 
-    print(f'Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s')
-    print(
-        f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
-    print(
-        f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
+#     print(f'Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s')
+#     print(
+#         f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
+#     print(
+#         f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
+
+model = Seq2Seq(enc, dec, device).to(device)
+model.load_state_dict(torch.load('bestmodel.pt'))
+test_loss = evaluate(model, test_iterator, criterion)
+print(test_loss)
